@@ -4,6 +4,7 @@ android {
     defaultConfig { applicationId = "com.otg.flasherpro"; minSdk = 26; targetSdk = 34; versionCode = 2; versionName = "2.0" }
     buildFeatures { compose = true }; composeOptions { kotlinCompilerExtensionVersion = "1.5.8" }
     buildTypes { release { isMinifyEnabled = false } }
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
 }
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
