@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="match_parent">
-<TextView android:text="OTG FLASHER - UNIVERSAL - NO VINCE - NO SU CHECK" android:textStyle="bold" android:textSize="14sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/tvStatus" android:text="Status: Ready Universal" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Spinner android:id="@+id/spDevice" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnPick" android:text="1. PICK IMG / ISO FILE" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginTop="8dp"/>
-<Button android:id="@+id/btnFlash" android:text="2. FLASH TO OTG (UNIVERSAL)" android:layout_width="match_parent" android:layout_height="70dp"/>
-<ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8dp"><TextView android:id="@+id/tvLog" android:text="LOG UNIVERSAL FRESH:\n" android:fontFamily="monospace" android:textSize="12sp" android:layout_width="match_parent" android:layout_height="wrap_content"/></ScrollView>
-</LinearLayout>
