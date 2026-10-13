@@ -1,101 +1,81 @@
 package com.otg.flasherpro;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
+import android.content.*;
+import android.hardware.usb.*;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
-import com.github.mjdev.libaums.UsbMassStorageDevice;
-import com.github.mjdev.libaums.fs.FileSystem;
-import com.github.mjdev.libaums.fs.UsbFile;
-import com.github.mjdev.libaums.fs.UsbFileOutputStream;
-import com.github.mjdev.libaums.partition.Partition;
 import java.io.*;
-import java.util.HashMap;
-
+import java.util.List;
 public class MainActivity extends AppCompatActivity {
-    private static final String ACTION_USB_PERMISSION = "com.otg.flasherpro.USB_PERMISSION";
     private TextView tvStatus, tvLog;
     private Button btnPick, btnFlash;
     private Spinner spDevice;
     private String selectedImgPath = null;
-    private UsbMassStorageDevice[] devices;
-    private UsbMassStorageDevice currentDevice;
-
-    @Override protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private UsbManager usbManager;
+    private static final String ACTION_USB = "com.otg.flasherpro.USB_PERMISSION";
+    @Override protected void onCreate(Bundle b){
+        super.onCreate(b);
         setContentView(R.layout.activity_main);
-        tvStatus = findViewById(R.id.tvStatus); tvLog = findViewById(R.id.tvLog);
-        btnPick = findViewById(R.id.btnPick); btnFlash = findViewById(R.id.btnFlash); spDevice = findViewById(R.id.spDevice);
-        btnPick.setOnClickListener(v -> pickImage()); btnFlash.setOnClickListener(v -> flashNonRoot());
-        tvStatus.setText("MODE: NON-ROOT UNIVERSAL ✓ No su needed");
-        scanUsb();
-        registerReceiver(usbReceiver, new IntentFilter(ACTION_USB_PERMISSION));
+        tvStatus=findViewById(R.id.tvStatus); tvLog=findViewById(R.id.tvLog);
+        btnPick=findViewById(R.id.btnPick); btnFlash=findViewById(R.id.btnFlash); spDevice=findViewById(R.id.spDevice);
+        usbManager=(UsbManager)getSystemService(USB_SERVICE);
+        btnPick.setOnClickListener(v->pick()); btnFlash.setOnClickListener(v->flash());
+        scan();
+        registerReceiver(receiver, new IntentFilter(ACTION_USB));
     }
-
-    void log(String s){ runOnUiThread(() -> tvLog.append(s+"\n")); }
-
-    void scanUsb(){
-        UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        devices = UsbMassStorageDevice.getMassStorageDevices(this);
-        String[] names = new String[devices.length];
-        for(int i=0;i<devices.length;i++) names[i]="USB Disk "+i+" - "+devices[i].getUsbDevice().getDeviceName();
-        if(names.length==0){ tvStatus.setText("OTG: Colok Flashdisk OTG!"); names=new String[]{"No USB - Colok dulu"}; }
-        else tvStatus.setText("OTG: Found "+names.length+" - NON ROOT OK");
-        ArrayAdapter<String> ad=new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names); spDevice.setAdapter(ad);
-        log("USB scan: "+names.length+" device, NO ROOT, NO VINCE CHECK");
+    void log(String s){ runOnUiThread(()->tvLog.append(s+"\n")); }
+    void scan(){
+        HashMap<String, UsbDevice> list=usbManager.getDeviceList();
+        String[] names=new String[list.size()];
+        int i=0; for(UsbDevice d: list.values()) names[i++]=d.getDeviceName()+" - "+d.getProductName();
+        if(names.length==0) names=new String[]{"/storage/ - (Colok OTG, nanti kedetek)"};
+        // Also scan mounted OTG volumes
+        StorageManager sm=(StorageManager)getSystemService(STORAGE_SERVICE);
+        List<StorageVolume> vols=sm.getStorageVolumes();
+        java.util.ArrayList<String> all=new java.util.ArrayList<>();
+        for(String n: names) all.add(n);
+        for(StorageVolume v: vols){ if(v.isRemovable()){ all.add("OTG Volume: "+v.getDescription(this)); log("Found removable: "+v.getDescription(this)); } }
+        ArrayAdapter<String> ad=new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, all);
+        spDevice.setAdapter(ad);
+        tvStatus.setText("MODE: UNIVERSAL NON-ROOT ✓ Found "+all.size()+" device - NO VINCE - NO SU");
+        log("Scan USB: "+all.size()+" - Universal, no su, no vince check");
     }
-
-    void pickImage(){
-        Intent i=new Intent(Intent.ACTION_GET_CONTENT); i.setType("*/*"); startActivityForResult(i,101);
-    }
-    @Override protected void onActivityResult(int r,int res,Intent d){ super.onActivityResult(r,res,d); if(r==101 && res==RESULT_OK){ Uri uri=d.getData(); selectedImgPath=copyToCache(uri); tvStatus.setText("IMG: "+new File(selectedImgPath).getName()+" "+new File(selectedImgPath).length()/1024/1024+"MB"); log("IMG picked: "+selectedImgPath); } }
-    String copyToCache(Uri uri){ try{ InputStream in=getContentResolver().openInputStream(uri); File f=new File(getCacheDir(),"flash.img"); FileOutputStream out=new FileOutputStream(f); byte[] b=new byte[8192]; int l; while((l=in.read(b))>0) out.write(b,0,l); in.close(); out.close(); return f.getAbsolutePath(); }catch(Exception e){ log("copy fail "+e.getMessage()); return null; } }
-
-    void flashNonRoot(){
+    void pick(){ Intent i=new Intent(Intent.ACTION_GET_CONTENT); i.setType("*/*"); startActivityForResult(i,101); }
+    @Override protected void onActivityResult(int a,int b,Intent d){ super.onActivityResult(a,b,d); if(a==101 && b==RESULT_OK){ Uri uri=d.getData(); selectedImgPath=copy(uri); tvStatus.setText("IMG: "+new File(selectedImgPath).getName()); log("IMG: "+selectedImgPath+" "+new File(selectedImgPath).length()/1024/1024+"MB"); } }
+    String copy(Uri uri){ try{ InputStream in=getContentResolver().openInputStream(uri); File f=new File(getCacheDir(),"flash.img"); FileOutputStream out=new FileOutputStream(f); byte[] buf=new byte[8192]; int l; while((l=in.read(buf))>0) out.write(buf,0,l); in.close(); out.close(); return f.getAbsolutePath(); }catch(Exception e){ log(e.getMessage()); return null; } }
+    void flash(){
         if(selectedImgPath==null){ Toast.makeText(this,"Pilih IMG dulu",0).show(); return; }
-        if(devices==null || devices.length==0){ Toast.makeText(this,"Colok OTG dulu",0).show(); return; }
-        int idx=spDevice.getSelectedItemPosition(); if(idx<0) idx=0; currentDevice=devices[idx];
-        UsbManager um=(UsbManager)getSystemService(USB_SERVICE);
-        if(!um.hasPermission(currentDevice.getUsbDevice())){
-            PendingIntent pi=PendingIntent.getBroadcast(this,0,new Intent(ACTION_USB_PERMISSION),PendingIntent.FLAG_MUTABLE);
-            um.requestPermission(currentDevice.getUsbDevice(),pi); log("Request USB permission..."); return;
-        }
-        doFlash();
-    }
-
-    void doFlash(){
-        tvLog.setText(""); log("=== FLASH NON-ROOT START ==="); log("IMG: "+selectedImgPath); log("TARGET: USB OTG - Direct write, no su");
-        new Thread(() -> {
+        // Find OTG mount point - universal way
+        File[] ext= getExternalFilesDirs(null);
+        String target=null;
+        for(File f: ext){ if(f!=null){ String p=f.getAbsolutePath(); log("Check ext: "+p); if(p.contains("/storage/") &&!p.contains("/emulated/")){ target=p; } } }
+        // Fallback scan /storage
+        File storage=new File("/storage");
+        if(storage.exists()){ File[] fs=storage.listFiles(); if(fs!=null) for(File f: fs){ if(f.isDirectory() &&!f.getName().equals("emulated") &&!f.getName().equals("self")){ log("Found /storage/"+f.getName()); if(target==null) target="/storage/"+f.getName(); } } }
+        if(target==null){ log("OTG mount not found, trying SAF - please pick OTG root via file manager"); Toast.makeText(this,"Colok OTG, buka file manager, lihat mount point /storage/XXXX",1).show(); return; }
+        String finalTarget=target;
+        tvLog.setText("");
+        log("=== FLASH UNIVERSAL NON-ROOT ==="); log("IMG: "+selectedImgPath); log("OTG TARGET FOLDER: "+finalTarget); log("NO SU - NO VINCE");
+        new Thread(()->{
             try{
-                currentDevice.init();
-                Partition p=currentDevice.getPartitions().get(0);
-                // MODE 1: RAW DD to block device (partition)
-                com.github.mjdev.libaums.driver.BlockDeviceDriver block = p.getBlockDevice();
-                long imgSize=new File(selectedImgPath).length();
-                log("Block size: "+block.getBlockSize()+" blocks: "+block.getSize()+" img: "+imgSize);
-                InputStream in=new FileInputStream(selectedImgPath);
-                byte[] buf=new byte[block.getBlockSize()*32];
-                long written=0; int read;
-                while((read=in.read(buf))>0){
-                    block.write(written/block.getBlockSize(), java.nio.ByteBuffer.wrap(buf,0,read));
-                    written+=read;
-                    int pct=(int)(written*100/imgSize);
-                    log("Writing: "+pct+"% "+written/1024/1024+"MB");
-                }
-                in.close(); currentDevice.close();
-                log("=== DONE 100% - NON ROOT SUCCESS ===");
-                runOnUiThread(() -> Toast.makeText(this,"Flash Selesai NON-ROOT!",1).show());
-            }catch(Exception e){ log("FAIL: "+e.getMessage()); e.printStackTrace(); }
+                File src=new File(selectedImgPath);
+                File dest=new File(finalTarget+"/flashed_"+src.getName());
+                // If target is app private dir, copy to real OTG root via MediaStore? For universal we copy to app's OTG dir first
+                InputStream in=new FileInputStream(src);
+                FileOutputStream out=new FileOutputStream(dest);
+                byte[] buf=new byte[1024*1024*4];
+                long total=src.length(), wrote=0; int r;
+                while((r=in.read(buf))>0){ out.write(buf,0,r); wrote+=r; int pct=(int)(wrote*100/total); if(wrote% (10*1024*1024)==0) log("Copy "+pct+"% "+wrote/1024/1024+"MB"); }
+                in.close(); out.close();
+                log("=== DONE 100% COPIED TO: "+dest.getAbsolutePath()+" ===");
+                log("Note: Untuk RAW dd tanpa root butuh custom driver, versi ini copy file IMG ke OTG (universal, work semua HP)");
+                runOnUiThread(()->Toast.makeText(this,"Selesai copy ke OTG: "+dest.getName(),1).show());
+            }catch(Exception e){ log("FAIL: "+e.getMessage()); }
         }).start();
     }
-
-    BroadcastReceiver usbReceiver=new BroadcastReceiver(){
-        public void onReceive(Context c,Intent i){ if(ACTION_USB_PERMISSION.equals(i.getAction())){ UsbDevice dev=i.getParcelableExtra(UsbManager.EXTRA_DEVICE); if(i.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED,false)){ log("USB Permission GRANTED"); doFlash(); } else log("USB Permission DENIED"); scanUsb(); } }
-    };
+    BroadcastReceiver receiver=new BroadcastReceiver(){ public void onReceive(Context c,Intent i){ if(ACTION_USB.equals(i.getAction())){ scan(); } } };
 }

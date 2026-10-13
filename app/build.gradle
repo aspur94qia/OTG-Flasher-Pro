@@ -6,20 +6,12 @@ android {
   applicationId "com.otg.flasherpro"
   minSdk 24
   targetSdk 34
-  versionCode 3
-  versionName "3.0-UNIVERSAL-NO-ROOT"
+  versionCode 4
+  versionName "4.0-UNIVERSAL-NO-ROOT-NATIVE"
  }
- buildTypes {
-  release { minifyEnabled false }
-  debug { minifyEnabled false }
- }
- compileOptions {
-  sourceCompatibility JavaVersion.VERSION_17
-  targetCompatibility JavaVersion.VERSION_17
- }
+ buildTypes { release { minifyEnabled false } debug { minifyEnabled false } }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 dependencies {
  implementation 'androidx.appcompat:appcompat:1.6.1'
- implementation 'com.google.android.material:material:1.11.0'
- implementation 'com.github.mjdev:libaums:0.9.3'
 }
