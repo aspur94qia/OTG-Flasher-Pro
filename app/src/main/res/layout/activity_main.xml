@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="match_parent">
-<TextView android:id="@+id/tvStatus" android:text="ROOT: Checking... UNIVERSAL" android:textStyle="bold" android:textSize="16sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/tvOtg" android:text="OTG: Scanning... UNIVERSAL" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnRefresh" android:text="Refresh OTG Devices" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+<TextView android:id="@+id/tvStatus" android:text="NON-ROOT UNIVERSAL - No su" android:textStyle="bold" android:textSize="16sp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
 <Spinner android:id="@+id/spDevice" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnPick" android:text="1. PICK IMG FILE" android:layout_width="match_parent" android:layout_height="60dp"/>
-<Button android:id="@+id/btnFlash" android:text="2. FLASH NOW (REAL DD - UNIVERSAL)" android:layout_width="match_parent" android:layout_height="60dp"/>
-<ScrollView android:layout_width="match_parent" android:layout_height="match_parent"><TextView android:id="@+id/tvLog" android:text="LOG:\nUNIVERSAL MODE - NO VINCE CHECK\n" android:fontFamily="monospace" android:layout_width="match_parent" android:layout_height="wrap_content"/></ScrollView>
+<Button android:id="@+id/btnPick" android:text="1. PICK IMG" android:layout_width="match_parent" android:layout_height="60dp"/>
+<Button android:id="@+id/btnFlash" android:text="2. FLASH OTG - NON ROOT (NO SU)" android:layout_width="match_parent" android:layout_height="70dp"/>
+<ScrollView android:layout_width="match_parent" android:layout_height="match_parent"><TextView android:id="@+id/tvLog" android:text="LOG NON-ROOT:\n" android:fontFamily="monospace" android:layout_width="match_parent" android:layout_height="wrap_content"/></ScrollView>
 </LinearLayout>
